@@ -1,6 +1,5 @@
 -module(calculator_eunit).
 -include_lib("eunit/include/eunit.hrl").
-% -include("../src/calculator.erl").
 -compile(export_all).
 
 eval_expresstion_test() ->

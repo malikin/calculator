@@ -26,6 +26,8 @@ validate_input(String) ->
 eval_expession_stack({plus, {num, X}, {num, Y}}, _Stack) ->
   X + Y.
 
+%% Validate input, check braces input balance
+
 validate_input([], 0) ->
   {ok, valid};
 
@@ -36,5 +38,5 @@ validate_input([H|T], Acc) ->
   case H of
     40 -> validate_input(T, Acc + 1); % Open brace
     41 -> validate_input(T, Acc - 1); % Close brace
-    _   -> validate_input(T, Acc)
+    _  -> validate_input(T, Acc)
   end.
