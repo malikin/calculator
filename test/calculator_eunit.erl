@@ -3,7 +3,14 @@
 -compile(export_all).
 
 parse_expression_test() ->
-  ?assertEqual({plus, {num, 1}, {num, 1}}, calculator:parse_expression("(1 + 1)")).
+  ?assertEqual({plus, {num, 1}, {num, 1}}, calculator:parse_expression("(1+1)")),
+  ?assertEqual({plus, {num, 1}, {num, 1}}, calculator:parse_expression("(1 + 1)")),
+  ?assertEqual({minus, {num, 1}, {num, 1}}, calculator:parse_expression("(1-1)")),
+  ?assertEqual({minus, {num, 1}, {num, 1}}, calculator:parse_expression("(1 - 1)")),
+  ?assertEqual({multiply, {num, 1}, {num, 1}}, calculator:parse_expression("(1*1)")),
+  ?assertEqual({multiply, {num, 1}, {num, 1}}, calculator:parse_expression("(1 * 1)")),
+  ?assertEqual({divide, {num, 1}, {num, 1}}, calculator:parse_expression("(1/1)")),
+  ?assertEqual({divide, {num, 1}, {num, 1}}, calculator:parse_expression("(1 / 1)")).
 
 eval_expresstion_test() ->
   ?assertEqual(2, calculator:eval_expression({plus, {num, 1}, {num, 1}})),

@@ -7,6 +7,9 @@
          validate_input/1
         ]).
 
+-define(open_brace, $().
+-define(close_brace, $)).
+
 %%====================================================================
 %% API functions
 %%====================================================================
@@ -25,15 +28,29 @@ validate_input(String) ->
 %%====================================================================
 
 parse_expression([H|T], OperStack, DataStack) ->
-  OpenBrace  = 40,
-  CloseBrace = 41,
-  erlang:display(H),
-  erlang:display(T),
+  Plus = $+,
+  Minus = $-,
+  Multiply = $*,
+  Divide = $/,
+
   case H of
-    OpenBrace  -> parse_expression(T, [OpenBrace|OperStack], DataStack);
-    CloseBrace -> {hd(OperStack), [{num, Num} || Num <- DataStack]};
-    "+" -> parse_expression(T, [plus|OperStack], DataStack);
-    Val -> parse_expression(T, OperStack, [Val, DataStack])
+    ?open_brace ->
+      parse_expression(T, [?open_brace|OperStack], DataStack);
+    ?close_brace ->
+      Operands = [{num, Num} || Num <- DataStack],
+      list_to_tuple([hd(OperStack) | Operands]);
+    Plus ->
+      parse_expression(T, [plus|OperStack], DataStack);
+    Minus ->
+      parse_expression(T, [minus|OperStack], DataStack);
+    Multiply ->
+      parse_expression(T, [multiply|OperStack], DataStack);
+    Divide ->
+      parse_expression(T, [divide|OperStack], DataStack);
+    Val when Val >= $0, Val =< $9 ->
+      parse_expression(T, OperStack, [list_to_integer([Val])|DataStack]);
+    _ ->
+      parse_expression(T, OperStack, DataStack)
   end.
 
 eval_expession_stack({plus, {num, X}, {num, Y}}, _Stack) ->
@@ -51,13 +68,11 @@ validate_input([], _Stack) ->
   {error, braces_error};
 
 validate_input([H|T], Stack) ->
-  OpenBrace  = 40,
-  CloseBrace = 41,
   case H of
-    OpenBrace  -> validate_input(T, [OpenBrace|Stack]);
-    CloseBrace ->
+    ?open_brace  -> validate_input(T, [?open_brace|Stack]);
+    ?close_brace ->
       if
-        hd(Stack) =:= OpenBrace -> validate_input(T, tl(Stack));
+        hd(Stack) =:= ?open_brace -> validate_input(T, tl(Stack));
         true                    -> {error, braces_error}
       end;
     _  -> validate_input(T, Stack)
