@@ -32,32 +32,45 @@ validate_input(String) ->
 %%====================================================================
 
 %% Parse string expression to ast
-parse_expression([H|T], OperStack, DataStack) ->
+parse_expression([], _CallStack, DataStack) ->
+  hd(DataStack);
+
+parse_expression([H|T], CallStack, DataStack) ->
   case H of
     ?open_brace ->
-      parse_expression(T, [?open_brace|OperStack], DataStack);
+      parse_expression(T, [?open_brace|CallStack], DataStack);
     ?close_brace ->
-      Operands = [{num, Num} || Num <- DataStack],
-      list_to_tuple([hd(OperStack) | Operands]);
+      case is_operator(hd(CallStack)) of
+        true ->
+          Operands = [Num || Num <- DataStack],
+          Expression = list_to_tuple([hd(CallStack) | lists:reverse(Operands)]),
+          % erlang:display(Expression),
+          parse_expression(T, tl(CallStack), [Expression]);
+        false ->
+          parse_expression(T, tl(CallStack), DataStack)
+      end;
     Operator when Operator =:= ?minus;
                   Operator =:= ?plus;
                   Operator =:= ?multiply;
                   Operator =:= ?divide
                   ->
-      parse_expression(T, [get_operator(Operator)|OperStack], DataStack);
+      parse_expression(T, [get_operator(Operator)|CallStack], DataStack);
     Val when Val >= $0, Val =< $9 ->
-      parse_expression(T, OperStack, [list_to_integer([Val])|DataStack]);
+      parse_expression(T, CallStack, [{num, list_to_integer([Val])}|DataStack]);
     _ ->
-      parse_expression(T, OperStack, DataStack)
+      parse_expression(T, CallStack, DataStack)
   end.
 
 get_operator(Operator) ->
   case Operator of
-    ?plus -> plus;
-    ?minus -> minus;
+    ?plus     -> plus;
+    ?minus    -> minus;
     ?multiply -> multiply;
-    ?divide -> divide
+    ?divide   -> divide
   end.
+
+is_operator(Operator) ->
+  lists:member(Operator, [plus, minus, multiply, divide]).
 
 %% Eval parsed expressions from ast
 eval_expession_stack({plus, {num, X}, {num, Y}}, _Stack) ->
@@ -79,7 +92,7 @@ validate_input([H|T], Stack) ->
     ?close_brace ->
       if
         hd(Stack) =:= ?open_brace -> validate_input(T, tl(Stack));
-        true                    -> {error, braces_error}
+        true                      -> {error, braces_error}
       end;
     _  -> validate_input(T, Stack)
   end.

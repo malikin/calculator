@@ -5,12 +5,18 @@
 parse_expression_test() ->
   ?assertEqual({plus, {num, 1}, {num, 1}}, calculator:parse_expression("(1+1)")),
   ?assertEqual({plus, {num, 1}, {num, 1}}, calculator:parse_expression("(1 + 1)")),
+  ?assertEqual(
+    {minus, {plus, {num, 2}, {num, 3}}, {num, 4}},
+    calculator:parse_expression("((2 + 3) - 4)")
+  ),
+  % ?assertEqual(
+  %   {plus, {plus, {num, 1}, {num, 1}}, {plus, {num, 2}, {num, 2}}},
+  %   calculator:parse_expression("((1+1)+(2+2))")
+  % ),
   ?assertEqual({minus, {num, 1}, {num, 1}}, calculator:parse_expression("(1-1)")),
   ?assertEqual({minus, {num, 1}, {num, 1}}, calculator:parse_expression("(1 - 1)")),
   ?assertEqual({multiply, {num, 1}, {num, 1}}, calculator:parse_expression("(1*1)")),
-  ?assertEqual({multiply, {num, 1}, {num, 1}}, calculator:parse_expression("(1 * 1)")),
-  ?assertEqual({divide, {num, 1}, {num, 1}}, calculator:parse_expression("(1/1)")),
-  ?assertEqual({divide, {num, 1}, {num, 1}}, calculator:parse_expression("(1 / 1)")).
+  ?assertEqual({divide, {num, 1}, {num, 1}}, calculator:parse_expression("(1/1)")).
 
 eval_expresstion_test() ->
   ?assertEqual(2, calculator:eval_expression({plus, {num, 1}, {num, 1}})),
