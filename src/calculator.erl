@@ -22,7 +22,7 @@ eval_expression(Expression) ->
   eval_expession_stack(Expression, []).
 
 parse_expression(Expr) ->
-  parse_expression(Expr, [], []).
+  parse_expression(Expr, [], [], {}).
 
 validate_input(String) ->
   validate_input(String, []).
@@ -32,33 +32,55 @@ validate_input(String) ->
 %%====================================================================
 
 %% Parse string expression to ast
-parse_expression([], _CallStack, DataStack) ->
-  hd(DataStack);
+parse_expression([], _CallStack, _DataStack, {Result}) ->
+  erlang:display(Result),
+  Result;
+parse_expression([], _CallStack, _DataStack, Result) ->
+  erlang:display(Result),
+  Result;
 
-parse_expression([H|T], CallStack, DataStack) ->
+parse_expression([H|T], CallStack, DataStack, Result) ->
   case H of
     ?open_brace ->
-      parse_expression(T, [?open_brace|CallStack], DataStack);
+      parse_expression(T, [?open_brace|CallStack], DataStack, Result);
     ?close_brace ->
       case is_operator(hd(CallStack)) of
-        true ->
-          Operands = [Num || Num <- DataStack],
-          Expression = list_to_tuple([hd(CallStack) | lists:reverse(Operands)]),
-          % erlang:display(Expression),
-          parse_expression(T, tl(CallStack), [Expression]);
         false ->
-          parse_expression(T, tl(CallStack), DataStack)
+          parse_expression(T, tl(CallStack), DataStack, Result);
+        true ->
+          Operands      = [Element || Element <- DataStack],
+          OperandsCount = length(Operands),
+          case OperandsCount of
+            0 ->
+              parse_expression([H|T], tl(CallStack), [], erlang:insert_element(1, Result, hd(CallStack)));
+            OperandsCountOne when OperandsCountOne =:= 1 ->
+              NewResult = erlang:insert_element(1, Result, hd(CallStack)),
+              parse_expression(
+                [H|T],
+                tl(CallStack),
+                [],
+                erlang:insert_element(tuple_size(NewResult) + 1, NewResult, hd(Operands))
+               );
+            _ ->
+              Expression = list_to_tuple([hd(CallStack)|lists:reverse(Operands)]),
+              parse_expression(
+                [H|T],
+                tl(CallStack),
+                [],
+                erlang:insert_element(tuple_size(Result) + 1, Result, Expression)
+               )
+          end
       end;
     Operator when Operator =:= ?minus;
                   Operator =:= ?plus;
                   Operator =:= ?multiply;
                   Operator =:= ?divide
                   ->
-      parse_expression(T, [get_operator(Operator)|CallStack], DataStack);
+      parse_expression(T, [get_operator(Operator)|CallStack], DataStack, Result);
     Val when Val >= $0, Val =< $9 ->
-      parse_expression(T, CallStack, [{num, list_to_integer([Val])}|DataStack]);
+      parse_expression(T, CallStack, [{num, list_to_integer([Val])}|DataStack], Result);
     _ ->
-      parse_expression(T, CallStack, DataStack)
+      parse_expression(T, CallStack, DataStack, Result)
   end.
 
 get_operator(Operator) ->
