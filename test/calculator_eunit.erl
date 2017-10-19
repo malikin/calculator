@@ -5,10 +5,10 @@
 parse_expression_test() ->
   ?assertEqual({plus, {num, 1}, {num, 1}}, calculator:parse_expression("(1+1)")),
   ?assertEqual({plus, {num, 1}, {num, 2}}, calculator:parse_expression("(1 + 2)")),
-  % ?assertEqual(
-  %   {minus, {plus, {num, 2}, {num, 3}}, {num, 4}},
-  %   calculator:parse_expression("((2 + 3) - 4)")
-  % ),
+  ?assertEqual(
+    {minus, {plus, {num, 2}, {num, 3}}, {num, 4}},
+    calculator:parse_expression("((2 + 3) - 4)")
+  ),
   ?assertEqual(
     {minus, {num, 4}, {plus, {num, 2}, {num, 3}}},
     calculator:parse_expression("(4 - (2 + 3))")

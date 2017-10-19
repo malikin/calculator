@@ -31,21 +31,16 @@ validate_input(String) ->
 %% Internal functions
 %%====================================================================
 
-%% Parse string expression to ast
-parse_expression([], _CallStack, {Result}) ->
-  % erlang:display(Result),
-  Result;
-parse_expression([], _CallStack, Result) ->
-  % erlang:display(Result),
-  Result;
+parse_expression([], CallStack, _Result) ->
+  {_NewStack, NewResult} = prepare_result(CallStack, {}, []),
+  extract_result(NewResult);
 
 parse_expression([H|T], CallStack, Result) ->
   case H of
     ?open_brace ->
       parse_expression(T, [?open_brace|CallStack], Result);
     ?close_brace ->
-      {NewStack, NewResult} = prepare_result(CallStack, Result),
-      parse_expression(T, NewStack, NewResult);
+      parse_expression(T, [?close_brace|CallStack], Result);
     Operator when Operator =:= ?minus;
                   Operator =:= ?plus;
                   Operator =:= ?multiply;
@@ -58,12 +53,20 @@ parse_expression([H|T], CallStack, Result) ->
       parse_expression(T, CallStack, Result)
   end.
 
-prepare_result(Stack, Result) ->
-  prepare_result(Stack, Result, []).
+extract_result({Result}) ->
+  Result;
+extract_result(Result) ->
+  Result.
+
+% prepare_result(Stack, Result) ->
+  % prepare_result(Stack, Result, []).
+
+prepare_result([], Result, _Buffer) ->
+  {[], Result};
 
 prepare_result(Stack, Result, Buffer) ->
   % erlang:display(Stack),
-  erlang:display(Buffer),
+  % erlang:display(Buffer),
   case hd(Stack) of
     Operator when Operator =:= minus;
                   Operator =:= plus;
@@ -72,14 +75,25 @@ prepare_result(Stack, Result, Buffer) ->
                   ->
       prepare_result(tl(Stack), erlang:insert_element(1, Result, hd(Stack)), Buffer);
     ?open_brace ->
-      NewResult = lists:foldl(
+      BufferSize = length(Buffer),
+      if
+        BufferSize < 2 ->
+         TmpResult = erlang:insert_element(2, Result, hd(Buffer)),
+         {NextStack, NextNode} = prepare_result(tl(Stack), {}, []),
+         erlang:display(NextNode),
+         {NextStack, erlang:insert_element(2, TmpResult, NextNode)};
+        true ->
+          NewResult = lists:foldl(
                     fun(Element, Acc) ->
                         erlang:insert_element(2, Acc, Element)
                     end,
                     Result,
                     Buffer
                    ),
-      {tl(Stack), {NewResult}};
+          {tl(Stack), {NewResult}}
+      end;
+    ?close_brace ->
+      prepare_result(tl(Stack), Result, Buffer);
     _ ->
       prepare_result(tl(Stack), Result, lists:reverse([(hd(Stack))|Buffer]))
   end.
