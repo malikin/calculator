@@ -2,6 +2,9 @@
 -include_lib("eunit/include/eunit.hrl").
 -compile(export_all).
 
+tokenize_expression_test() ->
+  ?assertEqual([open_brace, {num, 1}, plus, {num, 1}, close_brace], calculator:tokenize_expression("(1+1)")).
+
 parse_expression_test() ->
   ?assertEqual({plus, {num, 1}, {num, 1}}, calculator:parse_expression("(1+1)")),
   ?assertEqual({plus, {num, 1}, {num, 2}}, calculator:parse_expression("(1 + 2)")),
