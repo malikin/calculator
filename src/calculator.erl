@@ -24,7 +24,8 @@ eval_expression(Expression) ->
 
 parse_expression(Expression) ->
   Tokenized = tokenize_expression(Expression),
-  prepare_result(Tokenized, {}, []).
+  {Result} = prepare_result(Tokenized, {}, []),
+  Result.
 
 tokenize_expression(Expression) ->
   tokenize_expression(Expression, []).
@@ -43,7 +44,7 @@ tokenize_expression([H|T], Result) ->
   case H of
     Val when Val >= $0, Val =< $9 ->
       tokenize_expression(T, [{num, list_to_integer([Val])}|Result]);
-    "$ " ->
+    $\s ->
       tokenize_expression(T, Result);
     Val ->
       tokenize_expression(T, [get_token(Val)|Result])
@@ -59,13 +60,11 @@ get_token(Operator) ->
     ?close_brace -> close_brace
   end.
 
-prepare_result([], {Result}, _Buffer) ->
-  Result;
-prepare_result([], Result, _Buffer) ->
-  Result;
+prepare_result([], _Result, Buffer) ->
+  hd(Buffer);
 
 prepare_result(Stack, Result, Buffer) ->
-  erlang:display(Stack),
+  % erlang:display(Stack),
   % erlang:display(Buffer),
   case hd(Stack) of
     Operator when Operator =:= minus;
@@ -73,29 +72,19 @@ prepare_result(Stack, Result, Buffer) ->
                   Operator =:= multiply;
                   Operator =:= divide
                   ->
-      prepare_result(tl(Stack), erlang:insert_element(1, Result, hd(Stack)), Buffer);
-    open_brace ->
       BufferSize = length(Buffer),
       if
-        BufferSize < 2 ->
-         TmpResult = erlang:insert_element(2, Result, hd(Buffer)),
-         {NextStack, NextNode} = prepare_result(tl(Stack), {}, []),
-         erlang:display(NextNode),
-         {NextStack, erlang:insert_element(2, TmpResult, NextNode)};
+        BufferSize > 0 ->
+          {Operator, hd(Buffer), prepare_result(tl(Stack), Result, Buffer)};
         true ->
-          NewResult = lists:foldl(
-                    fun(Element, Acc) ->
-                        erlang:insert_element(2, Acc, Element)
-                    end,
-                    Result,
-                    Buffer
-                   ),
-          {tl(Stack), {NewResult}}
+          {Operator, prepare_result(tl(Stack), Result, Buffer)}
       end;
+    open_brace ->
+      {prepare_result(tl(Stack), Result, Buffer)};
     close_brace ->
       prepare_result(tl(Stack), Result, Buffer);
     _ ->
-      prepare_result(tl(Stack), Result, lists:reverse([(hd(Stack))|Buffer]))
+      prepare_result(tl(Stack), Result, [(hd(Stack))|Buffer])
   end.
 
 %% Eval parsed expressions from ast
