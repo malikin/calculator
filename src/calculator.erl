@@ -28,7 +28,7 @@ parse_expression(Expression) ->
   Result.
 
 tokenize_expression(Expression) ->
-  tokenize_expression(Expression, []).
+  tokenize_expression(Expression, [], []).
 
 validate_input(String) ->
   validate_input(String, []).
@@ -37,18 +37,26 @@ validate_input(String) ->
 %% Internal functions
 %%====================================================================
 
-tokenize_expression([], Result) ->
+tokenize_expression([], Result, _NumBuffer) ->
   lists:reverse(Result);
 
-tokenize_expression([H|T], Result) ->
+tokenize_expression([H|T], Result, NumBuffer) ->
   case H of
     Val when Val >= $0, Val =< $9 ->
-      tokenize_expression(T, [{num, list_to_integer([Val])}|Result]);
+      tokenize_expression(T, Result, [Val|NumBuffer]);
     $\s ->
-      tokenize_expression(T, Result);
+      {NewResult, NewNumBuffer} = check_num_buffer(Result, NumBuffer),
+      tokenize_expression(T, NewResult, NewNumBuffer);
     Val ->
-      tokenize_expression(T, [get_token(Val)|Result])
+      {NewResult, NewNumBuffer} = check_num_buffer(Result, NumBuffer),
+      tokenize_expression(T, [get_token(Val)|NewResult], NewNumBuffer)
   end.
+
+check_num_buffer(Result, []) ->
+  {Result, []};
+
+check_num_buffer(Result, NumBuffer) ->
+  {[{num, list_to_integer(lists:reverse(NumBuffer))}|Result], []}.
 
 get_token(Operator) ->
   case Operator of
@@ -75,7 +83,7 @@ prepare_result(Stack, Result, Buffer) ->
       BufferSize = length(Buffer),
       if
         BufferSize > 0 ->
-          {Operator, hd(Buffer), prepare_result(tl(Stack), Result, Buffer)};
+          {Operator, hd(Buffer), prepare_result(tl(Stack), Result, tl(Buffer))};
         true ->
           {Operator, prepare_result(tl(Stack), Result, Buffer)}
       end;

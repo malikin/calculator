@@ -4,7 +4,8 @@
 
 tokenize_expression_test() ->
   ?assertEqual([open_brace, {num, 1}, plus, {num, 1}, close_brace], calculator:tokenize_expression("(1+1)")),
-  ?assertEqual([open_brace, {num, 1}, plus, {num, 1}, close_brace], calculator:tokenize_expression("(1 + 1)")).
+  ?assertEqual([open_brace, {num, 1}, plus, {num, 1}, close_brace], calculator:tokenize_expression("(1 + 1)")),
+  ?assertEqual([open_brace, {num, 12}, plus, {num, 123}, close_brace], calculator:tokenize_expression("(12 + 123)")).
 
 parse_expression_test() ->
   ?assertEqual({plus, {num, 1}, {num, 1}}, calculator:parse_expression("(1+1)")),
