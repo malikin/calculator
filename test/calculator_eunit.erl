@@ -29,7 +29,8 @@ parse_expression_test() ->
 
 eval_expresstion_test() ->
   ?assertEqual(2, calculator:eval_expression({plus, {num, 1}, {num, 1}})),
-  ?assertEqual(0, calculator:eval_expression({minus, {num, 1}, {num, 1}})).
+  ?assertEqual(0, calculator:eval_expression({minus, {num, 1}, {num, 1}})),
+  ?assertEqual(1, calculator:eval_expression({minus, {plus, {num, 2}, {num, 3}}, {num, 4}})).
 
 validate_input_test() ->
   ?assertEqual({ok, valid}, calculator:validate_input("(1 + 2 - (0 + 1))")),

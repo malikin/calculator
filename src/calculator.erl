@@ -20,11 +20,11 @@
 %%====================================================================
 
 eval_expression(Expression) ->
-  eval_expession_stack(Expression, []).
+  eval_expression_ast(Expression).
 
 parse_expression(Expression) ->
   Tokenized = tokenize_expression(Expression),
-  prepare_result(Tokenized, [], []).
+  parse_expression(Tokenized, [], []).
 
 tokenize_expression(Expression) ->
   tokenize_expression(Expression, [], []).
@@ -67,21 +67,21 @@ get_token(Operator) ->
     ?close_brace -> close_brace
   end.
 
-prepare_result([], _OpStack, Result) -> hd(Result);
+parse_expression([], _OpStack, Result) -> hd(Result);
 
-prepare_result(Input, OpStack, Result) ->
+parse_expression(Input, OpStack, Result) ->
   case hd(Input) of
-    {num, _} = Val -> prepare_result(tl(Input), OpStack, [Val|Result]);
+    {num, _} = Val -> parse_expression(tl(Input), OpStack, [Val|Result]);
     Operator when Operator =:= minus;
                   Operator =:= plus;
                   Operator =:= multiply;
                   Operator =:= divide
                   ->
-      prepare_result(tl(Input), [Operator|OpStack], Result);
-    open_brace -> prepare_result(tl(Input), OpStack, Result);
+      parse_expression(tl(Input), [Operator|OpStack], Result);
+    open_brace -> parse_expression(tl(Input), OpStack, Result);
     close_brace ->
       {NewResult, Operands} = extract_operands(Result, []),
-      prepare_result(tl(Input), tl(OpStack), [list_to_tuple([hd(OpStack) | Operands]) | NewResult])
+      parse_expression(tl(Input), tl(OpStack), [list_to_tuple([hd(OpStack) | Operands]) | NewResult])
   end.
 
 extract_operands(Stack, Operands = [_,_]) -> {Stack, Operands};
@@ -90,11 +90,19 @@ extract_operands([H|T], Operands) ->
   extract_operands(T, [H|Operands]).
 
 %% Eval parsed expressions from ast
-eval_expession_stack({plus, {num, X}, {num, Y}}, _Stack) ->
-  X + Y;
+eval_expression_ast({num, X}) -> X;
 
-eval_expession_stack({minus, {num, X}, {num, Y}}, _Stack) ->
-  X - Y.
+eval_expression_ast({plus, X, Y}) ->
+  eval_expression_ast(X) + eval_expression_ast(Y);
+
+eval_expression_ast({minus, X, Y}) ->
+  eval_expression_ast(X) - eval_expression_ast(Y);
+
+eval_expression_ast({multiply, X, Y}) ->
+  eval_expression_ast(X) * eval_expression_ast(Y);
+
+eval_expression_ast({divide, X, Y}) ->
+  eval_expression_ast(X) / eval_expression_ast(Y).
 
 %% Validate input, check braces input balance
 validate_input([], []) ->
