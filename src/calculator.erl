@@ -24,8 +24,7 @@ eval_expression(Expression) ->
 
 parse_expression(Expression) ->
   Tokenized = tokenize_expression(Expression),
-  {Result} = prepare_result(Tokenized, {}, []),
-  Result.
+  prepare_result(Tokenized, [], []).
 
 tokenize_expression(Expression) ->
   tokenize_expression(Expression, [], []).
@@ -68,32 +67,27 @@ get_token(Operator) ->
     ?close_brace -> close_brace
   end.
 
-prepare_result([], _Result, Buffer) ->
-  hd(Buffer);
+prepare_result([], _OpStack, Result) -> hd(Result);
 
-prepare_result(Stack, Result, Buffer) ->
-  % erlang:display(Stack),
-  % erlang:display(Buffer),
-  case hd(Stack) of
+prepare_result(Input, OpStack, Result) ->
+  case hd(Input) of
+    {num, _} = Val -> prepare_result(tl(Input), OpStack, [Val|Result]);
     Operator when Operator =:= minus;
                   Operator =:= plus;
                   Operator =:= multiply;
                   Operator =:= divide
                   ->
-      BufferSize = length(Buffer),
-      if
-        BufferSize > 0 ->
-          {Operator, hd(Buffer), prepare_result(tl(Stack), Result, tl(Buffer))};
-        true ->
-          {Operator, prepare_result(tl(Stack), Result, Buffer)}
-      end;
-    open_brace ->
-      {prepare_result(tl(Stack), Result, Buffer)};
+      prepare_result(tl(Input), [Operator|OpStack], Result);
+    open_brace -> prepare_result(tl(Input), OpStack, Result);
     close_brace ->
-      prepare_result(tl(Stack), Result, Buffer);
-    _ ->
-      prepare_result(tl(Stack), Result, [(hd(Stack))|Buffer])
+      {NewResult, Operands} = extract_operands(Result, []),
+      prepare_result(tl(Input), tl(OpStack), [list_to_tuple([hd(OpStack) | Operands]) | NewResult])
   end.
+
+extract_operands(Stack, Operands = [_,_]) -> {Stack, Operands};
+
+extract_operands([H|T], Operands) ->
+  extract_operands(T, [H|Operands]).
 
 %% Eval parsed expressions from ast
 eval_expession_stack({plus, {num, X}, {num, Y}}, _Stack) ->
