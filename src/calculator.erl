@@ -2,6 +2,7 @@
 
 %% API exports
 -export([
+         calculate/1,
          eval_expression/1,
          parse_expression/1,
          validate_input/1,
@@ -18,6 +19,14 @@
 %%====================================================================
 %% API functions
 %%====================================================================
+
+calculate(Input) ->
+  case validate_input(Input) of
+    {error, _} = Error -> Error;
+    {ok, valid}        ->
+      Parsed = parse_expression(Input),
+      eval_expression(Parsed)
+  end.
 
 eval_expression(Expression) ->
   eval_expression_ast(Expression).
