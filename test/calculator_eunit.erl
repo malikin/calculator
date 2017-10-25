@@ -33,6 +33,9 @@ parse_expression_test() ->
   ?assertEqual({multiply, {num, 1}, {num, 1}}, calculator:parse_expression("(1*1)")),
   ?assertEqual({divide, {num, 1}, {num, 1}}, calculator:parse_expression("(1/1)")).
 
+format_from_ast_test() ->
+  ?assertEqual("((2+3)-4)", calculator:format_from_ast({minus, {plus, {num, 2}, {num, 3}}, {num, 4}})).
+
 eval_expresstion_test() ->
   ?assertEqual(2, calculator:eval_expression({plus, {num, 1}, {num, 1}})),
   ?assertEqual(0, calculator:eval_expression({minus, {num, 1}, {num, 1}})),

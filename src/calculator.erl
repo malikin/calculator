@@ -5,6 +5,7 @@
          calculate/1,
          eval_expression/1,
          parse_expression/1,
+         format_from_ast/1,
          validate_input/1,
          tokenize_expression/1
         ]).
@@ -40,6 +41,9 @@ tokenize_expression(Expression) ->
 
 validate_input(String) ->
   validate_input(String, []).
+
+format_from_ast(Ast) ->
+  lists:flatten(format_expression_ast(Ast)).
 
 %%====================================================================
 %% Internal functions
@@ -112,6 +116,21 @@ eval_expression_ast({multiply, X, Y}) ->
 
 eval_expression_ast({divide, X, Y}) ->
   eval_expression_ast(X) / eval_expression_ast(Y).
+
+%% Eval parsed expressions from ast
+format_expression_ast({num, X}) -> X;
+
+format_expression_ast({plus, X, Y}) ->
+  ["(", format_expression_ast(X), "+", format_expression_ast(Y), ")"];
+
+format_expression_ast({minus, X, Y}) ->
+  ["(", format_expression_ast(X), "-", format_expression_ast(Y), ")"];
+
+format_expression_ast({multiply, X, Y}) ->
+  ["(", format_expression_ast(X), "*", format_expression_ast(Y), ")"];
+
+format_expression_ast({divide, X, Y}) ->
+  ["(", format_expression_ast(X), "/", format_expression_ast(Y), ")"].
 
 %% Validate input, check braces input balance
 validate_input([], []) ->
